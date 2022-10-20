@@ -1,22 +1,21 @@
 int ADDRESS_BUS[16] = {22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52};
-int DATA_BUS[8] = {39, 41, 43, 45, 47, 49, 51, 53};
-int CLOCK_PIN = 8;
-int RW_PIN = 9;
+int DATA_BUS[8] = {3, 4, 5, 6, 7, 8, 9, 10};
+int CLOCK_PIN = 2;
+int RW_PIN = 11;
 
 void setup() {
   pinMode(CLOCK_PIN, OUTPUT);
   pinMode(RW_PIN, INPUT);
-  pinMode(POWER_PIN, OUTPUT);
 
   for (int i = 0; i < 16; i++) {
     pinMode(ADDRESS_BUS[i], INPUT);
   }
 
-  for (int j = 0; j < 8; j++) {
-    pinMode(DATA_BUS[j], INPUT);
+  for (int i = 0; i < 8; i++) {
+    pinMode(DATA_BUS[i], INPUT);
   }
 
-  Serial.begin(9600);
+  Serial.begin(57600);
 }
 
 void loop() {
@@ -25,29 +24,36 @@ void loop() {
   tick();
 }
 
-void tick() {
-  digitalWrite(CLOCK_PIN, HIGH);
-  digitalWrite(CLOCK_PIN, LOW);
-}
-
 void log() {
-  // Reading Address Memory
+  char output[15];
+  unsigned int address = 0;
+  unsigned int data = 0;
+
+  // Reading Address Bus
   Serial.print("ADDRESS: ");
   for (int i = 15; i >= 0; i-- ) {
     int bitStatus = digitalRead(ADDRESS_BUS[i]) ? 1 : 0;
     Serial.print(bitStatus);
+    address = (address << 1) + bitStatus;
   }
 
-  // Reading Data from that Memory Region
-  Serial.print("     DATA: ");
-  for (int j = 7; j >= 0; j-- ) {
-    int bitStatus = digitalRead(DATA_BUS[j]) ? 1 : 0;
+  Serial.print("\t");
+
+  // Reading Data Bus
+  Serial.print("DATA: ");
+  for (int i = 7; i >= 0; i-- ) {
+    int bitStatus = digitalRead(DATA_BUS[i]) ? 1 : 0;
     Serial.print(bitStatus);
+    data = (data << 1) + bitStatus;
   }
 
-  // Reading state of R/W pin
-  Serial.print("     R/W Pin: ");
-  Serial.print(digitalRead(RW_PIN) ? "READ" : "WRITING");
-  
-  Serial.println();
+  sprintf(output, "\t %04x \t %c \t %02x", address, digitalRead(RW_PIN) ? 'r' : 'W', data);
+  Serial.println(output);
+}
+
+void tick() {
+  delay(500);
+  digitalWrite(CLOCK_PIN, HIGH);
+  delay(500);
+  digitalWrite(CLOCK_PIN, LOW);
 }
